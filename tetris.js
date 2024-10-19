@@ -5,21 +5,21 @@
 const canvas = document.getElementById('tetris');
 const ctx = canvas.getContext('2d');
 
-canvas.width = 300;
-canvas.height = 600;
+// Set the font for the HUD
+ctx.font = '20px "Press Start 2P"';
+
+const blocksize = 30; // Size of each block in pixels
+const startingBoardTop = blocksize;
+canvas.width = blocksize * 10;
+canvas.height = (blocksize * 20) + startingBoardTop;
 const debug = false;
+let gameover = false;
 
 // Starting difficulty level (0 = easy, 1 = normal, etc.)
 let currentDifficulty = 0;
 
 const requiredCompletedRowsToNextLevel = 2; // Number of completed rows to reach the next level
 let completedRowsToNextLevel = 0; // Number of completed rows to reach the next level
-
-// Set black as background color for the canvas
-ctx.backgroundColor = 'black';
-
-// Set the font for the score
-ctx.font = '20px Arial';
 
 console.log('Loading...')
 
@@ -226,10 +226,11 @@ let maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
 // Game board
 const board = [];
 let score = 0;
-updateScore(0); // Setup the HUD
 
-const boardRows = 20;
 const boardColumns = 10;
+const startingBoardRow = 1;
+const boardRows = 20 + startingBoardRow;
+// const endingBoardRow = boardRows + startingBoardRow;
 
 // Initialize the board (20 rows x 10 columns)
 // 0 = empty cell, 1 = filled cell
@@ -272,25 +273,35 @@ function setDifficulty(level) {
 function updateScore(value) {
   score += value;
 
-  // ctx.fillStyle = 'black';
-  // ctx.fillRect(0, 0, canvas.width, 30);
-  ctx.fillStyle = 'red';
-  ctx.fillText('Score: ' + score, 100, 100);
+  ctx.clearRect(0, 0, canvas.width, blocksize);
+  ctx.font = '20px "Press Start 2P"';
+  ctx.fillStyle = 'white';
+  ctx.fillText('SCORE: ' + score, 10, 20);
 }
 
 // Create a new tetromino
 function createTetromino() {
+  if (gameover) {
+    return;
+  }
+
   currentRotation = 0;
   currentShapeIndex = Math.floor(Math.random() * maxTetrominoes);
+
   if (debug)
     console.log('createTetromino > currentShapeIndex', currentShapeIndex);
+
   currentTetromino = tetrominoes[currentShapeIndex][currentRotation];
   currentX = 4; // Centered horizontally
-  currentY = 0; // Top of the board
+  currentY = startingBoardRow; // Top of the board
 }
 
 // Rotate the tetromino
 function rotateTetromino() {
+  if (gameover) {
+    return;
+  }
+
   // Calculate the new rotation for the current shape
   const newRotation = (currentRotation + 1) % tetrominoes[currentShapeIndex].length;
   // Get the new tetromino (each shape has rotations and each rotation is a new tetromino)
@@ -308,6 +319,10 @@ function rotateTetromino() {
 
 // Move the tetromino down
 function moveTetrominoDown() {
+  if (gameover) {
+    return;
+  }
+
   // Check if the tetromino can move down
   if (!isValidMove(currentX, currentY + 1, currentTetromino)) {
     // Freeze the tetromino if it can't move down
@@ -320,6 +335,10 @@ function moveTetrominoDown() {
 }
 
 function moveTetrominoLeft() {
+  if (gameover) {
+    return;
+  }
+
   // Check if the tetromino can move left
   if (isValidMove(currentX - 1, currentY, currentTetromino)) {
     // Move the tetromino left
@@ -328,6 +347,10 @@ function moveTetrominoLeft() {
 }
 
 function moveTetrominoRight() {
+  if (gameover) {
+    return;
+  }
+
   // Check if the tetromino can move right
   if (isValidMove(currentX + 1, currentY, currentTetromino)) {
     // Move the tetromino right
@@ -354,7 +377,7 @@ function isValidMove(x, y, tetromino) {
 
 function freezeTetromino() {
   // Check if the game is over
-  if (currentY === 0) {
+  if (currentY === startingBoardRow) {
     gameOver();
     return;
   }
@@ -376,11 +399,11 @@ function freezeTetromino() {
 
 function checkForCompletedRows() {
   // Check if there are completed rows in all the board
-  for (let i = 0; i < board.length; i++) {
+  for (let i = startingBoardRow; i < boardRows; i++) {
     // Check if the row is completed
     if (board[i].every(cell => cell === 1)) {
       // Mark the completed row with a specific value on the board so we can highlight it...
-      for (let j = 0; j < board[i].length; j++) {
+      for (let j = startingBoardRow; j < board[i].length; j++) {
         board[i][j] = 2;
       }
 
@@ -411,17 +434,25 @@ function checkForCompletedRows() {
 }
 
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (let y = 0; y < boardRows; y++) {
+  if (gameover) {
+    return;
+  }
+
+  if (score === 0) {
+    updateScore(0); // Setup the HUD and update the text with the loaded font as soon as available
+  }
+  clearGameCanvas();
+
+  for (let y = startingBoardRow; y < boardRows; y++) {
     for (let x = 0; x < boardColumns; x++) {
       if (board[y][x] === 1) {
         // Color the tetromino cells on the board
         ctx.fillStyle = 'blue';
-        ctx.fillRect(x * 30, y * 30, 30, 30);
+        ctx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
       } else if (board[y][x] === 2) {
         // White color for completed rows
         ctx.fillStyle = 'white';
-        ctx.fillRect(x * 30, y * 30, 30, 30);
+        ctx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
       }
     }
   }
@@ -430,20 +461,45 @@ function draw() {
   requestAnimationFrame(draw);
 }
 
+function clearGameCanvas() {
+  ctx.clearRect(0, startingBoardTop, canvas.width, canvas.height + startingBoardTop);
+}
+
+
 function drawTetromino() {
+  if (gameover) {
+    return;
+  }
+
   for (let i = 0; i < currentTetromino.length; i++) {
     for (let j = 0; j < currentTetromino[i].length; j++) {
       if (currentTetromino[i][j] === 1) {
         ctx.fillStyle = tetrominoColors[currentShapeIndex];
-        ctx.fillRect((currentX + j) * 30, (currentY + i) * 30, 30, 30);
+        ctx.fillRect((currentX + j) * blocksize, (currentY + i) * blocksize, blocksize, blocksize);
       }
     }
   }
 }
 
 function gameOver() {
+  gameover = true;
   clearInterval(timerId);
-  alert('Game Over! Your score is ' + score);
+  // ctx.clearRect(0, 0, canvas.width, canvas.height);
+  clearGameCanvas();
+
+  currentTetromino = null;
+
+  // Clear the board
+  for (let i = 0; i < boardRows; i++) {
+    board[i] = new Array(boardColumns).fill(0);
+  }
+  // alert('Game Over! Your score is ' + score);
+
+  ctx.font = '20px "Press Start 2P"';
+  ctx.fillStyle = 'white';
+  ctx.fillText('GAME OVER!', blocksize * 2, canvas.height / 2 - blocksize);
+  // ctx.fillText('YOUR SCORE:', blocksize * 2, canvas.height / 2 + blocksize * 2);
+  // ctx.fillText(score, blocksize * 2, canvas.height / 2 + blocksize * 4);
 }
 
 console.log('Starting game...')
@@ -451,7 +507,7 @@ createTetromino();
 draw();
 
 // Keyboard controls
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
   if (e.key === 'ArrowLeft') {
     moveTetrominoLeft();
   } else if (e.key === 'ArrowRight') {
