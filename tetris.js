@@ -5,15 +5,19 @@
 const canvas = document.getElementById('tetris');
 const ctx = canvas.getContext('2d');
 
-// Set the font for the HUD
-ctx.font = '20px "Press Start 2P"';
-
 const blocksize = 30; // Size of each block in pixels
 const startingBoardTop = blocksize;
 canvas.width = blocksize * 10;
 canvas.height = (blocksize * 20) + startingBoardTop;
 const debug = false;
-let gameover = false;
+let gameover = true;
+let startgame = true;
+
+// Set the font for the HUD
+ctx.font = '20px "Press Start 2P"';
+
+ctx.fillStyle = 'white';
+ctx.fillText('.', blocksize, canvas.height);
 
 // Starting difficulty level (0 = easy, 1 = normal, etc.)
 let currentDifficulty = 0;
@@ -21,7 +25,8 @@ let currentDifficulty = 0;
 const requiredCompletedRowsToNextLevel = 2; // Number of completed rows to reach the next level
 let completedRowsToNextLevel = 0; // Number of completed rows to reach the next level
 
-console.log('Loading...')
+if (debug)
+  console.log('Loading...')
 
 // Tetrominoes
 const tetrominoes = [
@@ -256,6 +261,20 @@ let currentY = null;
 let speed = difficultyLevels[currentDifficulty].speed;
 let timerId = null;
 
+// Setup initial variables and start the game
+function startGame() {
+  if (debug)
+    console.log('Starting game...');
+
+  gameover = false;
+  startgame = false;
+  score = 0;
+  completedRowsToNextLevel = 0;
+  setDifficulty(currentDifficulty);
+  createTetromino();
+  draw();
+}
+
 // Set the current level of the game
 function setDifficulty(level) {
   currentDifficulty = level;
@@ -266,6 +285,7 @@ function setDifficulty(level) {
   maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
   speed = difficultyLevels[currentDifficulty].speed;
   clearInterval(timerId);
+  // Timer for falling tetrominoes
   timerId = setInterval(moveTetrominoDown, speed);
 }
 
@@ -465,9 +485,8 @@ function clearGameCanvas() {
   ctx.clearRect(0, startingBoardTop, canvas.width, canvas.height + startingBoardTop);
 }
 
-
 function drawTetromino() {
-  if (gameover) {
+  if (!startgame && gameover) {
     return;
   }
 
@@ -481,12 +500,31 @@ function drawTetromino() {
   }
 }
 
+function drawStartScreen() {
+  ctx.font = '20px "Press Start 2P"';
+  ctx.fillStyle = 'white';
+  ctx.fillText('MARKETRIS', blocksize * 2, canvas.height / 2 - blocksize * 2);
+  ctx.fillText('Press F1', blocksize * 2, canvas.height / 2 - blocksize);
+
+  // Draw some static tetrominoes
+  currentShapeIndex = 4;
+  currentTetromino = tetrominoes[currentShapeIndex][0];
+  currentX = 1;
+  currentY = 1;
+  drawTetromino();
+
+  currentShapeIndex = 6;
+  currentTetromino = tetrominoes[currentShapeIndex][0];
+  currentX = 6;
+  currentY = 17;
+  drawTetromino();
+}
+
 function gameOver() {
   gameover = true;
   clearInterval(timerId);
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
   clearGameCanvas();
-
   currentTetromino = null;
 
   // Clear the board
@@ -497,14 +535,9 @@ function gameOver() {
 
   ctx.font = '20px "Press Start 2P"';
   ctx.fillStyle = 'white';
-  ctx.fillText('GAME OVER!', blocksize * 2, canvas.height / 2 - blocksize);
-  // ctx.fillText('YOUR SCORE:', blocksize * 2, canvas.height / 2 + blocksize * 2);
-  // ctx.fillText(score, blocksize * 2, canvas.height / 2 + blocksize * 4);
+  ctx.fillText('GAME OVER!', blocksize * 2, canvas.height / 2 - blocksize * 2);
+  ctx.fillText('F1 to restart', blocksize, canvas.height / 2 - blocksize);
 }
-
-console.log('Starting game...')
-createTetromino();
-draw();
 
 // Keyboard controls
 document.addEventListener('keydown', function (e) {
@@ -516,9 +549,14 @@ document.addEventListener('keydown', function (e) {
     moveTetrominoDown();
   } else if (e.key === 'ArrowUp') {
     rotateTetromino();
+  } else if (e.key === 'F1') {
+    if (gameover) {
+      startGame();
+    }
   }
 });
 
 console.log('Ready player one!')
-// Timer for falling tetrominoes
-timerId = setInterval(moveTetrominoDown, speed);
+
+// Wait for the font to be loaded before starting the game
+setTimeout(_   => { drawStartScreen() }, 1000);
