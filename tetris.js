@@ -469,10 +469,16 @@ function draw() {
         // Color the tetromino cells on the board
         ctx.fillStyle = 'blue';
         ctx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
+        // Draw grid lines
+        ctx.strokeStyle = 'black';
+        ctx.strokeRect(x * blocksize, y * blocksize, blocksize, blocksize);
       } else if (board[y][x] === 2) {
         // White color for completed rows
         ctx.fillStyle = 'white';
         ctx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
+        // Draw grid lines
+        ctx.strokeStyle = 'black';
+        ctx.strokeRect(x * blocksize, y * blocksize, blocksize, blocksize);
       }
     }
   }
@@ -495,6 +501,9 @@ function drawTetromino() {
       if (currentTetromino[i][j] === 1) {
         ctx.fillStyle = tetrominoColors[currentShapeIndex];
         ctx.fillRect((currentX + j) * blocksize, (currentY + i) * blocksize, blocksize, blocksize);
+        // Draw grid lines
+        ctx.strokeStyle = 'black';
+        ctx.strokeRect((currentX + j) * blocksize, (currentY + i) * blocksize, blocksize, blocksize);
       }
     }
   }
