@@ -1,5 +1,7 @@
 # Marketris
 
+![logo.jpg](assets/logo.jpg)
+
 The clone game in JavaScript made by someone who played the original game time ago.
 
 ## Plot
@@ -11,7 +13,7 @@ but in the meantime I'll give you a summary: save the world hero!
 ## Mechanics
 
 Use all the logic you have to fit the pieces together to form complete rows and score points.
-Each n completed rows you will pass to the next level, the difficulty will increase but as someone will surely have said: "From great difficulties comes great money".
+Each n completed rows you will pass to the next level, the difficulty will increase but as someone said: "From great difficulties comes great scores".
 
 ## Controls
 
