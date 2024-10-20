@@ -9,8 +9,10 @@ import { loadConfig, getConfig } from './config.js';
 import { printDebug } from './lib/utility.js';
 
 
-const canvas = document.getElementById('tetris');
-const ctx = canvas.getContext('2d');
+const tetrisCanvas = document.getElementById('tetris');
+const tetrisCtx = tetrisCanvas.getContext('2d');
+const nextCanvas = document.getElementById('next-tetromino');
+const nextCtx = nextCanvas.getContext('2d');
 // Font used for the HUD is "Press Start 2P" loaded from Google Fonts by the CSS file
 
 // Global variables
@@ -19,7 +21,7 @@ let startgame = true;
 let blocksize;
 let startingBoardTop;
 let debug;
-let currentDifficulty;
+let currentDifficulty = 0;
 let requiredCompletedRowsToNextLevel;
 let completedRowsToNextLevel = 0; // Number of completed rows to reach the next level
 let maxTetrominoes;
@@ -28,19 +30,20 @@ let boardColumns;
 let startingBoardRow;
 let boardRows;
 let speed;
-let timerId = null;
+let timerId;
 const board = [];
 
 // ---- Current tetromino info ----
-let currentShapeIndex = null;
-let currentTetromino = null;
+let nextShapeIndex; // Index of the next tetromino to show preview on the HUD
+let currentShapeIndex;
+let currentTetromino;
 // Current position of the tetromino
 // 0 = vertical, 1 = horizontal
 let currentRotation = 0;
 // Current position X of the tetromino
-let currentX = null;
+let currentX;
 // Current position Y of the tetromino
-let currentY = null;
+let currentY;
 // --------------------------------
 
 
@@ -52,8 +55,8 @@ loadConfig().then(_ => {
   // Assign values of configuration variables
   blocksize = config.blocksize; // Size of each block in pixels
   startingBoardTop = blocksize;
-  canvas.width = blocksize * 10;
-  canvas.height = (blocksize * 20) + startingBoardTop;
+  tetrisCanvas.width = blocksize * 10;
+  tetrisCanvas.height = (blocksize * 20) + startingBoardTop;
   debug = config.debug;
   // Starting difficulty level (0 = easy, 1 = normal, etc.)
   currentDifficulty = config.currentDifficulty;
@@ -89,6 +92,7 @@ function startGame() {
   startgame = false;
   score = 0;
   completedRowsToNextLevel = 0;
+  currentDifficulty = 0;
   setDifficulty(currentDifficulty);
   createTetromino();
   draw();
@@ -111,10 +115,10 @@ function setDifficulty(level) {
 function updateScore(value) {
   score += value;
 
-  ctx.clearRect(0, 0, canvas.width, blocksize);
-  ctx.font = '16px "Press Start 2P"';
-  ctx.fillStyle = 'white';
-  ctx.fillText('SCORE: ' + score, 10, 20);
+  tetrisCtx.clearRect(0, 0, tetrisCanvas.width, blocksize);
+  tetrisCtx.font = '16px "Press Start 2P"';
+  tetrisCtx.fillStyle = 'white';
+  tetrisCtx.fillText('SCORE: ' + score, 10, 20);
 }
 
 // Create a new tetromino
@@ -124,13 +128,28 @@ function createTetromino() {
   }
 
   currentRotation = 0;
-  currentShapeIndex = Math.floor(Math.random() * maxTetrominoes);
 
-  printDebug('Creating new tetromino', currentShapeIndex);
+  currentShapeIndex = nextShapeIndex !== undefined ? nextShapeIndex : Math.floor(Math.random() * maxTetrominoes);
+  nextShapeIndex = Math.floor(Math.random() * maxTetrominoes);
 
-  currentTetromino = tetrominoes[currentShapeIndex][currentRotation];
+  printDebug(`Creating new tetromino ${currentShapeIndex} (next will be ${nextShapeIndex})`);
+
+  currentTetromino = generateTetromino(currentShapeIndex);
   currentX = 4; // Centered horizontally
   currentY = startingBoardRow; // Top of the board
+
+  updateNextTetrominoDisplay()
+}
+
+function generateTetromino(index, rotation = 0) {
+  return tetrominoes[index][rotation];
+}
+
+function updateNextTetrominoDisplay() {
+  // Clear the next tetromino canvas
+  nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+
+  drawTetromino({ shapeIndex: nextShapeIndex, x: 1, y: 1, ctx: nextCtx, rotation: 0 });
 }
 
 // Rotate the tetromino
@@ -283,72 +302,65 @@ function draw() {
     for (let x = 0; x < boardColumns; x++) {
       if (board[y][x] === 1) {
         // Color the tetromino cells on the board
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
+        tetrisCtx.fillStyle = 'blue';
+        tetrisCtx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
         // Draw grid lines
-        ctx.strokeStyle = 'black';
-        ctx.strokeRect(x * blocksize, y * blocksize, blocksize, blocksize);
+        tetrisCtx.strokeStyle = 'black';
+        tetrisCtx.strokeRect(x * blocksize, y * blocksize, blocksize, blocksize);
       } else if (board[y][x] === 2) {
         // White color for completed rows
-        ctx.fillStyle = 'white';
-        ctx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
+        tetrisCtx.fillStyle = 'white';
+        tetrisCtx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
         // Draw grid lines
-        ctx.strokeStyle = 'black';
-        ctx.strokeRect(x * blocksize, y * blocksize, blocksize, blocksize);
+        tetrisCtx.strokeStyle = 'black';
+        tetrisCtx.strokeRect(x * blocksize, y * blocksize, blocksize, blocksize);
       }
     }
   }
 
-  drawTetromino();
+  drawTetromino({ shapeIndex: currentShapeIndex, x: currentX, y: currentY, ctx: tetrisCtx, rotation: currentRotation });
   requestAnimationFrame(draw);
 }
 
 function clearGameCanvas() {
-  ctx.clearRect(0, startingBoardTop, canvas.width, canvas.height + startingBoardTop);
+  tetrisCtx.clearRect(0, startingBoardTop, tetrisCanvas.width, tetrisCanvas.height + startingBoardTop);
 }
 
-function drawTetromino() {
+function drawTetromino({ shapeIndex, x, y, rotation, ctx }) {
   if (!startgame && gameover) {
     return;
   }
 
-  for (let i = 0; i < currentTetromino.length; i++) {
-    for (let j = 0; j < currentTetromino[i].length; j++) {
-      if (currentTetromino[i][j] === 1) {
-        ctx.fillStyle = tetrominoColors[currentShapeIndex];
-        ctx.fillRect((currentX + j) * blocksize, (currentY + i) * blocksize, blocksize, blocksize);
+  const tetromino = generateTetromino(shapeIndex, rotation);
+
+  for (let i = 0; i < tetromino.length; i++) {
+    for (let j = 0; j < tetromino[i].length; j++) {
+      if (tetromino[i][j] === 1) {
+        ctx.fillStyle = tetrominoColors[shapeIndex];
+        ctx.fillRect((x + j) * blocksize, (y + i) * blocksize, blocksize, blocksize);
         // Draw grid lines
         ctx.strokeStyle = 'black';
-        ctx.strokeRect((currentX + j) * blocksize, (currentY + i) * blocksize, blocksize, blocksize);
+        ctx.strokeRect((x + j) * blocksize, (y + i) * blocksize, blocksize, blocksize);
       }
     }
   }
 }
 
 function drawStartScreen() {
-  ctx.font = '20px "Press Start 2P"';
-  ctx.fillStyle = 'white';
-  ctx.fillText('MARKETRIS', blocksize * 2, canvas.height / 2 - blocksize * 2);
-  ctx.fillText('Press F1', blocksize * 2, canvas.height / 2 - blocksize);
+  tetrisCtx.font = '20px "Press Start 2P"';
+  tetrisCtx.fillStyle = 'white';
+  tetrisCtx.fillText('MARKETRIS', blocksize * 2, tetrisCanvas.height / 2 - blocksize * 2);
+  tetrisCtx.fillText('Press F1', blocksize * 2, tetrisCanvas.height / 2 - blocksize);
 
-  // Draw some static tetrominoes
-  currentShapeIndex = 4;
-  currentTetromino = tetrominoes[currentShapeIndex][0];
-  currentX = 1;
-  currentY = 1;
-  drawTetromino();
-
-  currentShapeIndex = 6;
-  currentTetromino = tetrominoes[currentShapeIndex][0];
-  currentX = 6;
-  currentY = 17;
-  drawTetromino();
+  // Draw some static tetrominoes at default rotation
+  drawTetromino({ shapeIndex: 4, x: 1, y: 1, ctx: tetrisCtx, rotation: 0 });
+  drawTetromino({ shapeIndex: 6, x: 6, y: 17, ctx: tetrisCtx, rotation: 0 });
 }
 
 function gameOver() {
   gameover = true;
   clearInterval(timerId);
-  // ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // tetrisCtx.clearRect(0, 0, tetrisCanvas.width, tetrisCanvas.height);
   clearGameCanvas();
   currentTetromino = null;
 
@@ -356,12 +368,14 @@ function gameOver() {
   for (let i = 0; i < boardRows; i++) {
     board[i] = new Array(boardColumns).fill(0);
   }
-  // alert('Game Over! Your score is ' + score);
 
-  ctx.font = '20px "Press Start 2P"';
-  ctx.fillStyle = 'white';
-  ctx.fillText('GAME OVER!', blocksize * 2, canvas.height / 2 - blocksize * 2);
-  ctx.fillText('F1 to restart', blocksize, canvas.height / 2 - blocksize);
+  tetrisCtx.font = '20px "Press Start 2P"';
+  tetrisCtx.fillStyle = 'white';
+  tetrisCtx.fillText('GAME OVER!', blocksize * 2, tetrisCanvas.height / 2 - blocksize * 2);
+  tetrisCtx.fillText('F1 to restart', blocksize, tetrisCanvas.height / 2 - blocksize);
+
+  // Clear the next tetromino canvas
+  nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
 }
 
 // Wait for the font to be loaded before starting the game
