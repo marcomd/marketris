@@ -1,0 +1,10 @@
+{
+  "debug": true,
+  "blocksize": 30,
+  "startingBoardTop": 30,
+  "currentDifficulty": 0,
+  "requiredCompletedRowsToNextLevel": 2,
+  "boardColumns": 10,
+  "startingBoardRow": 1,
+  "boardRows": 21
+}

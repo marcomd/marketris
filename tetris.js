@@ -2,269 +2,88 @@
 // Marketris - The clone game in JavaScript made by @marcomd
 // --------------------------------
 
+import { tetrominoes } from './lib/tetrominoes.js';
+import { tetrominoColors } from './lib/tetromino_colors.js';
+import { difficultyLevels } from './lib/difficulty_levels.js';
+import { loadConfig, getConfig } from './config.js';
+import { printDebug } from './lib/utility.js';
+
+
 const canvas = document.getElementById('tetris');
 const ctx = canvas.getContext('2d');
+// Font used for the HUD is "Press Start 2P" loaded from Google Fonts by the CSS file
 
-const blocksize = 30; // Size of each block in pixels
-const startingBoardTop = blocksize;
-canvas.width = blocksize * 10;
-canvas.height = (blocksize * 20) + startingBoardTop;
-const debug = false;
+// Global variables
 let gameover = true;
 let startgame = true;
-
-// Set the font for the HUD
-ctx.font = '20px "Press Start 2P"';
-
-ctx.fillStyle = 'white';
-ctx.fillText('.', blocksize, canvas.height);
-
-// Starting difficulty level (0 = easy, 1 = normal, etc.)
-let currentDifficulty = 0;
-
-const requiredCompletedRowsToNextLevel = 2; // Number of completed rows to reach the next level
+let blocksize;
+let startingBoardTop;
+let debug;
+let currentDifficulty;
+let requiredCompletedRowsToNextLevel;
 let completedRowsToNextLevel = 0; // Number of completed rows to reach the next level
-
-if (debug)
-  console.log('Loading...')
-
-// Tetrominoes
-const tetrominoes = [
-  // 0. I-Shape
-  [
-    // Vertical I-Tetromino
-    [
-      [0, 1, 0, 0],
-      [0, 1, 0, 0],
-      [0, 1, 0, 0],
-      [0, 1, 0, 0]
-    ],
-    // Horizontal I-Tetromino
-    [
-      [0, 0, 0, 0],
-      [1, 1, 1, 1],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0]
-    ]
-  ],
-  // 1. J-Shape
-  [
-    // Top J-Tetromino
-    [
-      [0, 1, 0],
-      [0, 1, 0],
-      [1, 1, 0]
-    ],
-    // Right J-Tetromino
-    [
-      [1, 0, 0],
-      [1, 1, 1],
-      [0, 0, 0]
-    ],
-    // Bottom J-Tetromino
-    [
-      [0, 1, 1],
-      [0, 1, 0],
-      [0, 1, 0]
-    ],
-    // Left J-Tetromino
-    [
-      [0, 0, 0],
-      [1, 1, 1],
-      [0, 0, 1]
-    ]
-  ],
-  // 2. L-Shape
-  [
-    // Top L-Tetromino
-    [
-      [0, 1, 0],
-      [0, 1, 0],
-      [0, 1, 1]
-    ],
-    // Right L-Tetromino
-    [
-      [0, 0, 0],
-      [1, 1, 1],
-      [1, 0, 0]
-    ],
-    // Bottom L-Tetromino
-    [
-      [1, 1, 0],
-      [0, 1, 0],
-      [0, 1, 0]
-    ],
-    // Left L-Tetromino
-    [
-      [0, 0, 1],
-      [1, 1, 1],
-      [0, 0, 0]
-    ]
-  ],
-  // 3. O-Shape
-  [
-    // O-Tetromino
-    [
-      [1, 1],
-      [1, 1]
-    ],
-  ],
-  // 4. S-Shape
-  [
-    // Vertical S-Tetromino
-    [
-      [0, 1, 1],
-      [1, 1, 0],
-      [0, 0, 0]
-    ],
-    // Horizontal S-Tetromino
-    [
-      [0, 1, 0],
-      [0, 1, 1],
-      [0, 0, 1]
-    ]
-  ],
-  // 5. T-Shape
-  [
-    // Top T-Tetromino
-    [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 0, 0]
-    ],
-    // Right T-Tetromino
-    [
-      [0, 1, 0],
-      [0, 1, 1],
-      [0, 1, 0]
-    ],
-    // Bottom T-Tetromino
-    [
-      [0, 0, 0],
-      [1, 1, 1],
-      [0, 1, 0]
-    ],
-    // Left T-Tetromino
-    [
-      [0, 1, 0],
-      [1, 1, 0],
-      [0, 1, 0]
-    ]
-  ],
-  // 6. Z-Shape
-  [
-    // Vertical Z-Tetromino
-    [
-      [1, 1, 0],
-      [0, 1, 1],
-      [0, 0, 0]
-    ],
-    // Horizontal Z-Tetromino
-    [
-      [0, 0, 1],
-      [0, 1, 1],
-      [0, 1, 0]
-    ]
-  ],
-  // 7. Nightmare big L shape
-  [
-    // Top L-Tetromino
-    [
-      [1, 0, 0],
-      [1, 0, 0],
-      [1, 1, 1]
-    ],
-    // Right L-Tetromino
-    [
-      [1, 1, 1],
-      [1, 0, 0],
-      [1, 0, 0]
-    ],
-    // Bottom L-Tetromino
-    [
-      [1, 1, 1],
-      [0, 0, 1],
-      [0, 0, 1]
-    ],
-    // Left L-Tetromino
-    [
-      [0, 0, 1],
-      [0, 0, 1],
-      [1, 1, 1]
-    ]
-  ],
-  // 8. Hell tetromino cross shape
-  [
-    // Hell tetromino
-    [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 1, 0]
-    ],
-  ]
-];
-
-// Each tetromino has an own color
-const tetrominoColors = [
-  'red',
-  'gold',
-  'orange',
-  'yellow',
-  'green',
-  'cyan',
-  'pink',
-  'brown',
-  'purple'
-];
-
-const difficultyLevels = {
-  0: { speed: 600, maxTetrominoes: 6, name: 'easy' },
-  1: { speed: 450, maxTetrominoes: 6, name: 'normal' },
-  2: { speed: 250, maxTetrominoes: 6, name: 'hard' },
-  3: { speed: 200, maxTetrominoes: tetrominoes.length - 1, name: 'nightmare' },
-  4: { speed: 150, maxTetrominoes: tetrominoes.length, name: 'hell' },
-}
-
-// Difficulty set the number of tetrominoes, hard level will have all tetrominoes
-let maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
-
-// Game board
-const board = [];
+let maxTetrominoes;
 let score = 0;
+let boardColumns;
+let startingBoardRow;
+let boardRows;
+let speed;
+let timerId = null;
+const board = [];
 
-const boardColumns = 10;
-const startingBoardRow = 1;
-const boardRows = 20 + startingBoardRow;
-// const endingBoardRow = boardRows + startingBoardRow;
-
-// Initialize the board (20 rows x 10 columns)
-// 0 = empty cell, 1 = filled cell
-for (let i = 0; i < boardRows; i++) {
-  board[i] = new Array(boardColumns).fill(0);
-}
-
-// Current tetromino
+// ---- Current tetromino info ----
 let currentShapeIndex = null;
 let currentTetromino = null;
-
 // Current position of the tetromino
 // 0 = vertical, 1 = horizontal
 let currentRotation = 0;
-
 // Current position X of the tetromino
 let currentX = null;
-
 // Current position Y of the tetromino
 let currentY = null;
+// --------------------------------
 
-// Speed settings
-let speed = difficultyLevels[currentDifficulty].speed;
-let timerId = null;
+
+// Global variables initialization, game setup and start
+loadConfig().then(_ => {
+  const config = getConfig();
+
+  printDebug('Setting config...');
+  // Assign values of configuration variables
+  blocksize = config.blocksize; // Size of each block in pixels
+  startingBoardTop = blocksize;
+  canvas.width = blocksize * 10;
+  canvas.height = (blocksize * 20) + startingBoardTop;
+  debug = config.debug;
+  // Starting difficulty level (0 = easy, 1 = normal, etc.)
+  currentDifficulty = config.currentDifficulty;
+  requiredCompletedRowsToNextLevel = config.requiredCompletedRowsToNextLevel; // Number of completed rows to reach the next level
+  // Difficulty set the number of tetrominoes, hard level will have all tetrominoes
+  maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
+
+  // Game board
+  boardRows = config.boardRows;
+  startingBoardRow = config.startingBoardRow;
+  boardColumns = config.boardColumns;
+  initializeBoard(board, boardRows, boardColumns);
+
+  // Speed settings
+  speed = difficultyLevels[currentDifficulty].speed;
+});
+
+function initializeBoard(board, boardRows, boardColumns) {
+  // Initialize the board (n rows x n columns)
+  // 0 = empty cell, 1 = filled cell
+  for (let i = 0; i < boardRows; i++) {
+    board[i] = new Array(boardColumns).fill(0);
+  }
+
+  return board;
+}
 
 // Setup initial variables and start the game
 function startGame() {
-  if (debug)
-    console.log('Starting game...');
+  printDebug('Starting game...');
 
   gameover = false;
   startgame = false;
@@ -279,8 +98,7 @@ function startGame() {
 function setDifficulty(level) {
   currentDifficulty = level;
 
-  if (debug)
-    console.log('setDifficulty > currentDifficulty', currentDifficulty);
+  printDebug('Setting difficulty level to ' + difficultyLevels[currentDifficulty].name);
 
   maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
   speed = difficultyLevels[currentDifficulty].speed;
@@ -294,7 +112,7 @@ function updateScore(value) {
   score += value;
 
   ctx.clearRect(0, 0, canvas.width, blocksize);
-  ctx.font = '20px "Press Start 2P"';
+  ctx.font = '16px "Press Start 2P"';
   ctx.fillStyle = 'white';
   ctx.fillText('SCORE: ' + score, 10, 20);
 }
@@ -308,8 +126,7 @@ function createTetromino() {
   currentRotation = 0;
   currentShapeIndex = Math.floor(Math.random() * maxTetrominoes);
 
-  if (debug)
-    console.log('createTetromino > currentShapeIndex', currentShapeIndex);
+  printDebug('Creating new tetromino', currentShapeIndex);
 
   currentTetromino = tetrominoes[currentShapeIndex][currentRotation];
   currentX = 4; // Centered horizontally
@@ -436,8 +253,7 @@ function checkForCompletedRows() {
       // Increment the score based on the current difficulty level
       updateScore(10 * (currentDifficulty + 1));
 
-      if (debug)
-        console.log('checkForCompletedRows > score', score);
+      printDebug('Completed row! Score: ' + score);
 
       // Increment the number of completed rows
       completedRowsToNextLevel++;
@@ -548,24 +364,26 @@ function gameOver() {
   ctx.fillText('F1 to restart', blocksize, canvas.height / 2 - blocksize);
 }
 
-// Keyboard controls
-document.addEventListener('keydown', function (e) {
-  if (e.key === 'ArrowLeft') {
-    moveTetrominoLeft();
-  } else if (e.key === 'ArrowRight') {
-    moveTetrominoRight();
-  } else if (e.key === 'ArrowDown') {
-    moveTetrominoDown();
-  } else if (e.key === 'ArrowUp') {
-    rotateTetromino();
-  } else if (e.key === 'F1') {
-    if (gameover) {
-      startGame();
-    }
-  }
-});
-
-console.log('Ready player one!')
-
 // Wait for the font to be loaded before starting the game
-setTimeout(_   => { drawStartScreen() }, 1000);
+setTimeout(_ => {
+  drawStartScreen()
+
+  // Keyboard controls
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft') {
+      moveTetrominoLeft();
+    } else if (e.key === 'ArrowRight') {
+      moveTetrominoRight();
+    } else if (e.key === 'ArrowDown') {
+      moveTetrominoDown();
+    } else if (e.key === 'ArrowUp') {
+      rotateTetromino();
+    } else if (e.key === 'F1') {
+      if (gameover) {
+        startGame();
+      }
+    }
+  });
+
+  printDebug('Ready player one!')
+}, 1000);
