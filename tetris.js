@@ -31,6 +31,7 @@ let startingBoardRow;
 let boardRows;
 let speed;
 let timerId;
+let music;
 const board = [];
 
 // ---- Current tetromino info ----
@@ -107,6 +108,15 @@ function setDifficulty(level) {
 
   maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
   speed = difficultyLevels[currentDifficulty].speed;
+
+  //const musicIndex = Math.floor(Math.random() * 3) + 1
+  if (currentDifficulty < 4) {
+    music && music.pause()
+    music = new Audio(`assets/sound/marketris_${currentDifficulty + 1}.mp3`);
+    music.loop = true;
+    music.play();
+  }
+
   clearInterval(timerId);
   // Timer for falling tetrominoes
   timerId = setInterval(moveTetrominoDown, speed);
@@ -374,6 +384,9 @@ function drawStartScreen() {
 
 function gameOver() {
   gameover = true;
+
+  music.pause();
+
   clearInterval(timerId);
   // tetrisCtx.clearRect(0, 0, tetrisCanvas.width, tetrisCanvas.height);
   clearGameCanvas();
