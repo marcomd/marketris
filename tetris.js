@@ -6,7 +6,7 @@ import { tetrominoes } from './lib/tetrominoes.js';
 import { tetrominoColors } from './lib/tetromino_colors.js';
 import { difficultyLevels } from './lib/difficulty_levels.js';
 import { loadConfig, getConfig } from './config.js';
-import { printDebug } from './lib/utility.js';
+import { printDebug, addLogMessage } from './lib/utility.js';
 
 
 const tetrisCanvas = document.getElementById('tetris');
@@ -102,7 +102,8 @@ function startGame() {
 function setDifficulty(level) {
   currentDifficulty = level;
 
-  printDebug('Setting difficulty level to ' + difficultyLevels[currentDifficulty].name);
+  printDebug(`Setting difficulty level to ${difficultyLevels[currentDifficulty].name} (bonus x${currentDifficulty + 1})`);
+  addLogMessage(`Level ${difficultyLevels[currentDifficulty].name}!`);
 
   maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
   speed = difficultyLevels[currentDifficulty].speed;
@@ -284,6 +285,9 @@ function checkForCompletedRows() {
       }
 
       printDebug(`Completed row! Added ${rowScore} (${bonusMultiplier}x multiple row) (${currentDifficulty + 1}x difficulty) to score, now is ${score}`);
+      if (bonusMultiplier > 1) {
+        addLogMessage(`Bonus ${bonusMultiplier}x`);
+      }
 
       // Increment the number of completed rows
       completedRowsToNextLevel++;
