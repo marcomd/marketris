@@ -112,13 +112,13 @@ function setDifficulty(level) {
 }
 
 // Update the score on the HUD
-function updateScore(value) {
+function updateScore(value, bonusMultiplier = 1) {
   score += value;
 
   tetrisCtx.clearRect(0, 0, tetrisCanvas.width, blocksize);
   tetrisCtx.font = '16px "Press Start 2P"';
   tetrisCtx.fillStyle = 'white';
-  tetrisCtx.fillText('SCORE: ' + score, 10, 20);
+  tetrisCtx.fillText(`SCORE: ${score}${bonusMultiplier > 1 ? ` x${bonusMultiplier}` : ''}`, 10, 20);
 }
 
 // Create a new tetromino
@@ -132,7 +132,7 @@ function createTetromino() {
   currentShapeIndex = nextShapeIndex !== undefined ? nextShapeIndex : Math.floor(Math.random() * maxTetrominoes);
   nextShapeIndex = Math.floor(Math.random() * maxTetrominoes);
 
-  printDebug(`Creating new tetromino ${currentShapeIndex} (next will be ${nextShapeIndex})`);
+  //printDebug(`Creating new tetromino ${currentShapeIndex} (next will be ${nextShapeIndex})`);
 
   currentTetromino = generateTetromino(currentShapeIndex);
   currentX = 4; // Centered horizontally
@@ -161,7 +161,7 @@ function rotateTetromino() {
   // Calculate the new rotation for the current shape
   const newRotation = (currentRotation + 1) % tetrominoes[currentShapeIndex].length;
   // Get the new tetromino (each shape has rotations and each rotation is a new tetromino)
-  const newTetromino = tetrominoes[currentShapeIndex][newRotation];
+  const newTetromino = generateTetromino(currentShapeIndex, newRotation);
 
   // Check if the tetromino can rotate
   if (!isValidMove(currentX, currentY, newTetromino)) {
@@ -254,6 +254,8 @@ function freezeTetromino() {
 }
 
 function checkForCompletedRows() {
+  let bonusMultiplier = 0;
+
   // Check if there are completed rows in all the board
   for (let i = startingBoardRow; i < boardRows; i++) {
     // Check if the row is completed
@@ -269,10 +271,19 @@ function checkForCompletedRows() {
         board.unshift(new Array(boardColumns).fill(0));
       }, 100);
 
+      bonusMultiplier++;
+      const rowScore = 10 * bonusMultiplier * (currentDifficulty + 1);
       // Increment the score based on the current difficulty level
-      updateScore(10 * (currentDifficulty + 1));
+      updateScore(rowScore, bonusMultiplier);
 
-      printDebug('Completed row! Score: ' + score);
+      // If the bonus multiplier is greater than 1, print the score with the multiplier popping up from the completed rows
+      if (bonusMultiplier > 1) {
+        setTimeout(() => {
+          updateScore(0);
+        }, 1000);
+      }
+
+      printDebug(`Completed row! Added ${rowScore} (${bonusMultiplier}x multiple row) (${currentDifficulty + 1}x difficulty) to score, now is ${score}`);
 
       // Increment the number of completed rows
       completedRowsToNextLevel++;
