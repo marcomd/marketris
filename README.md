@@ -4,11 +4,17 @@
 
 The clone game in JavaScript made by someone who played the original game time ago.
 
+https://marketris.vercel.app/
+
 ## Plot
 
-An kind princess kidnapped an evil overlord... or maybe. No damn, that was the end, sorry for the spoiler.
-Unfortunately the plot of this game is not ready yet (I only got to page 242)
-but in the meantime I'll give you a summary: save the world hero!
+An kind princess kidnapped an evil overlord and spanks him from morning till night.
+In the end they discover that they love each other and they get married.
+But they find that their life as a couple is not what they expected so they turn to crime.
+Then she cheats on him with the sheriff.
+He feels bad but then he finds out he's gay and starts a new life.
+There is an alternative ending but I can't reveal it yet.
+In the meantime I'll give you a summary: save the world hero!
 
 ## Mechanics
 
