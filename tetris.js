@@ -31,7 +31,7 @@ let startingBoardRow;
 let boardRows;
 let speed;
 let timerId;
-let music;
+let music = new Audio(`assets/sound/marketris_${currentDifficulty + 1}.mp3`);
 const board = [];
 
 // ---- Current tetromino info ----
@@ -53,11 +53,19 @@ loadConfig().then(_ => {
   const config = getConfig();
 
   printDebug('Setting config...');
+
+  // Game board
+  boardRows = config.boardRows;
+  startingBoardRow = config.startingBoardRow;
+  boardColumns = config.boardColumns;
   // Assign values of configuration variables
   blocksize = config.blocksize; // Size of each block in pixels
   startingBoardTop = blocksize;
-  tetrisCanvas.width = blocksize * 10;
-  tetrisCanvas.height = (blocksize * 20) + startingBoardTop;
+  tetrisCanvas.width = blocksize * boardColumns;
+  tetrisCanvas.height = (blocksize * boardRows);
+  nextCanvas.width = blocksize * 5;
+  nextCanvas.height = blocksize * 6;
+
   debug = config.debug;
   // Starting difficulty level (0 = easy, 1 = normal, etc.)
   currentDifficulty = config.currentDifficulty;
@@ -65,10 +73,7 @@ loadConfig().then(_ => {
   // Difficulty set the number of tetrominoes, hard level will have all tetrominoes
   maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
 
-  // Game board
-  boardRows = config.boardRows;
-  startingBoardRow = config.startingBoardRow;
-  boardColumns = config.boardColumns;
+
   initializeBoard(board, boardRows, boardColumns);
 
   // Speed settings
@@ -406,6 +411,19 @@ function gameOver() {
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
 }
 
+// function resizeCanvas() {
+//   const size = Math.min(window.innerWidth, window.innerHeight);
+//   blocksize = size / boardColumns; // Size of each block in pixels
+//   startingBoardTop = blocksize;
+//   tetrisCanvas.width = blocksize * boardColumns;
+//   tetrisCanvas.height = (blocksize * boardRows) + startingBoardTop;
+//   nextCanvas.width = blocksize * 5;
+//   nextCanvas.height = blocksize * 6;
+//   // Redraw or adjust game elements as needed
+// }
+// window.addEventListener('resize', resizeCanvas);
+// resizeCanvas();
+
 // Wait for the font to be loaded before starting the game
 setTimeout(_ => {
   drawStartScreen()
@@ -429,3 +447,5 @@ setTimeout(_ => {
 
   printDebug('Ready player one!')
 }, 1000);
+
+addLogMessage(`Bonus 13452x`);
