@@ -47,6 +47,9 @@ let currentX;
 let currentY;
 // --------------------------------
 
+// ---- Controls ----
+let touchStartX = 0;
+let touchStartY = 0;
 
 // Global variables initialization, game setup and start
 loadConfig().then(_ => {
@@ -448,4 +451,43 @@ setTimeout(_ => {
   printDebug('Ready player one!')
 }, 1000);
 
-addLogMessage(`Bonus 13452x`);
+// addLogMessage(`Bonus 13452x`);
+
+canvas.addEventListener('touchstart', (e) => {
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault(); // Prevent scrolling
+});
+
+canvas.addEventListener('touchend', (e) => {
+  const touch = e.changedTouches[0];
+  const touchEndX = touch.clientX;
+  const touchEndY = touch.clientY;
+
+  const diffX = touchEndX - touchStartX;
+  const diffY = touchEndY - touchStartY;
+
+  if (Math.abs(diffX) > Math.abs(diffY)) {
+    if (diffX > 0) {
+      moveTetrominoRight();
+    } else {
+      moveTetrominoLeft();
+    }
+  } else {
+    if (diffY > 0) {
+      moveTetrominoDown();
+    } else {
+      rotateTetromino();
+    }
+  }
+});
+
+canvas.addEventListener('touchstart', (e) => {
+  if (!gameStarted) {
+    startGame();
+  }
+});
