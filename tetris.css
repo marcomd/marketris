@@ -91,4 +91,12 @@ footer {
     text-overflow: ellipsis;
     /* Aggiunge i puntini di sospensione per il testo che sborda */
   }
+
+  footer {
+    opacity: 40%;
+  }
+
+  footer .author {
+    display: none;
+  }
 }
