@@ -17,7 +17,7 @@ const nextCtx = nextCanvas.getContext('2d');
 
 // Global variables
 let gameover = true;
-let startgame = true;
+let gameStarted = false;
 let blocksize;
 let startingBoardTop;
 let debug;
@@ -34,6 +34,7 @@ let speed;
 let timerId;
 let music = new Audio(`assets/music/level_0.mp3`);
 let soundEffectLevel;
+let gameoverSfx = new Audio('assets/sfx/gameover.mp3');
 const board = [];
 
 // ---- Current tetromino info ----
@@ -103,7 +104,7 @@ function startGame() {
   printDebug('Starting game...');
 
   gameover = false;
-  startgame = false;
+  gameStarted = true;
   score = 0;
   completedRowsToNextLevel = 0;
   currentDifficulty = startingDifficulty;
@@ -386,7 +387,7 @@ function clearGameCanvas() {
 }
 
 function drawTetromino({ shapeIndex, x, y, rotation, ctx }) {
-  if (!startgame && gameover) {
+  if (gameStarted && gameover) {
     return;
   }
 
@@ -420,6 +421,7 @@ function gameOver() {
   gameover = true;
 
   music.pause();
+  gameoverSfx.play();
 
   clearInterval(timerId);
   // tetrisCtx.clearRect(0, 0, tetrisCanvas.width, tetrisCanvas.height);
@@ -483,6 +485,10 @@ tetrisCanvas.addEventListener('touchstart', (e) => {
   const touch = e.touches[0];
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
+
+  if (!gameStarted) {
+    startGame();
+  }
 });
 
 tetrisCanvas.addEventListener('touchmove', (e) => {
@@ -509,11 +515,5 @@ tetrisCanvas.addEventListener('touchend', (e) => {
     } else {
       rotateTetromino();
     }
-  }
-});
-
-tetrisCanvas.addEventListener('touchstart', (e) => {
-  if (!gameStarted) {
-    startGame();
   }
 });
