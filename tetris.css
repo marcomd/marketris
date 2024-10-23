@@ -46,27 +46,11 @@ canvas {
 .info-container {
   display: grid;
   grid-template-columns: 1fr;
-  /* align-items: center; */
-  /* margin-top: 10px; */
-  /* width: 50%; */
 }
 
-canvas#next-tetromino {}
-
 .game-log {
-  /* position: absolute; */
-  /* top: 10px; */
-  /* right: 10px; */
-  /* width: 300px; */
-  /* max-height: 200px; */
-  /* border: 1px solid #888; */
-  /* margin-top: 10px;
-  width: 100%;
-  max-width: 300px;
-  height: 100px; */
   overflow-y: auto;
   background-color: rgba(0, 0, 0, 0.5);
-  /* padding: 10px; */
 }
 
 .game-log .log-message {
@@ -81,29 +65,6 @@ footer {
   margin-top: 1rem;
 }
 
-/* Responsive styles */
-@media (min-width: 600px) {
-  .canvas-container {
-    /* flex-direction: row; */
-    /* grid-template-rows: 1fr 1fr; */
-  }
-
-  .info-container {
-    /* margin-left: 20px; */
-    /* margin-top: 0; */
-  }
-
-  /* canvas#tetris {
-    width: 300px;
-    height: 630px;
-  }
-
-  #next-tetromino {
-    width: 150px;
-    height: 180px;
-  } */
-}
-
 @media (max-width: 599px) {
   .canvas-container {
     /* flex-direction: row; */
@@ -115,16 +76,6 @@ footer {
   .info-container {
     grid-template-columns: 1fr 1fr;
   }
-
-  /* canvas#tetris {
-    width: 50vw;
-    height: 100vw;
-  }
-
-  #next-tetromino {
-    width: 30vw;
-    height: 50vw;
-  } */
 
   .info-container {
     /* width: 100%; */

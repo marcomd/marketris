@@ -470,7 +470,7 @@ setTimeout(_ => {
     } else if (e.key === 'ArrowUp') {
       rotateTetromino();
     } else if (e.key === 'F1') {
-      if (gameover) {
+      if (!gameStarted || gameover) {
         startGame();
       }
     }
@@ -486,7 +486,7 @@ tetrisCanvas.addEventListener('touchstart', (e) => {
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
 
-  if (!gameStarted) {
+  if (!gameStarted || gameover) {
     startGame();
   }
 });
