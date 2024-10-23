@@ -41,13 +41,9 @@ const board = [];
 let nextShapeIndex; // Index of the next tetromino to show preview on the HUD
 let currentShapeIndex;
 let currentTetromino;
-// Current position of the tetromino
-// 0 = vertical, 1 = horizontal
 let currentRotation = 0;
-// Current position X of the tetromino
-let currentX;
-// Current position Y of the tetromino
-let currentY;
+let currentX; // Current position X of the tetromino
+let currentY; // Current position Y of the tetromino
 // --------------------------------
 
 // ---- Controls ----
@@ -75,18 +71,12 @@ loadConfig().then(_ => {
   debug = config.debug;
   // Starting difficulty level (0 = easy, 1 = normal, etc.)
   startingDifficulty = config.startingDifficulty;
-  // Difficulty set the number of tetrominoes, hard level will have all tetrominoes
-  // fromTetromino = difficultyLevels[startingDifficulty].fromTetromino;
-  // toTetromino = difficultyLevels[startingDifficulty].toTetromino;
+
   if (difficultyLevels[startingDifficulty].sfx) {
     soundEffectLevel = new Audio(`assets/sfx/level_${startingDifficulty}.mp3`);
   }
 
-
   initializeBoard(board, boardRows, boardColumns);
-
-  // Speed settings
-  // speed = difficultyLevels[startingDifficulty].speed;
 });
 
 function initializeBoard(board, boardRows, boardColumns) {
@@ -362,11 +352,7 @@ function draw() {
     for (let x = 0; x < boardColumns; x++) {
       if (board[y][x] === 1) {
         // Color the tetromino cells on the board
-        tetrisCtx.fillStyle = 'blue';
-        tetrisCtx.fillRect(x * blocksize, y * blocksize, blocksize, blocksize);
-        // Draw grid lines
-        tetrisCtx.strokeStyle = 'black';
-        tetrisCtx.strokeRect(x * blocksize, y * blocksize, blocksize, blocksize);
+        drawTile(x, y, ['#00f', '#00a'], tetrisCtx);
       } else if (board[y][x] === 2) {
         // White color for completed rows
         tetrisCtx.fillStyle = 'white';
@@ -380,6 +366,21 @@ function draw() {
 
   drawTetromino({ shapeIndex: currentShapeIndex, x: currentX, y: currentY, ctx: tetrisCtx, rotation: currentRotation });
   requestAnimationFrame(draw);
+}
+
+function drawTile(x, y, colors, ctx) {
+  // Create a linear gradient
+  const xPos = x * blocksize;
+  const yPos = y * blocksize;
+  let gradient = tetrisCtx.createLinearGradient(xPos, yPos, xPos + 10, yPos + 10);
+  gradient.addColorStop(0, colors[0]);
+  gradient.addColorStop(1, colors[1]); // Adjust this color for the desired effect
+  // Draw the block with the gradient
+  ctx.fillStyle = gradient;
+  ctx.fillRect(xPos, yPos, blocksize, blocksize);
+  // Draw grid lines
+  ctx.strokeStyle = 'black';
+  ctx.strokeRect(xPos, yPos, blocksize, blocksize);
 }
 
 function clearGameCanvas() {
@@ -396,11 +397,7 @@ function drawTetromino({ shapeIndex, x, y, rotation, ctx }) {
   for (let i = 0; i < tetromino.length; i++) {
     for (let j = 0; j < tetromino[i].length; j++) {
       if (tetromino[i][j] === 1) {
-        ctx.fillStyle = tetrominoColors[shapeIndex];
-        ctx.fillRect((x + j) * blocksize, (y + i) * blocksize, blocksize, blocksize);
-        // Draw grid lines
-        ctx.strokeStyle = 'black';
-        ctx.strokeRect((x + j) * blocksize, (y + i) * blocksize, blocksize, blocksize);
+        drawTile(x + j, y + i, tetrominoColors[shapeIndex], ctx)
       }
     }
   }
@@ -441,19 +438,6 @@ function gameOver() {
   // Clear the next tetromino canvas
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
 }
-
-// function resizeCanvas() {
-//   const size = Math.min(window.innerWidth, window.innerHeight);
-//   blocksize = size / boardColumns; // Size of each block in pixels
-//   startingBoardTop = blocksize;
-//   tetrisCanvas.width = blocksize * boardColumns;
-//   tetrisCanvas.height = (blocksize * boardRows) + startingBoardTop;
-//   nextCanvas.width = blocksize * 5;
-//   nextCanvas.height = blocksize * 6;
-//   // Redraw or adjust game elements as needed
-// }
-// window.addEventListener('resize', resizeCanvas);
-// resizeCanvas();
 
 // Wait for the font to be loaded before starting the game
 setTimeout(_ => {
