@@ -21,18 +21,19 @@ let startgame = true;
 let blocksize;
 let startingBoardTop;
 let debug;
-let currentDifficulty = 0;
-let requiredCompletedRowsToNextLevel;
+let startingDifficulty;
+let currentDifficulty;
 let completedRowsToNextLevel = 0; // Number of completed rows to reach the next level
-let maxTetrominoes;
+let fromTetromino;
+let toTetromino;
 let score = 0;
 let boardColumns;
 let startingBoardRow;
 let boardRows;
 let speed;
 let timerId;
-let music = new Audio(`assets/music/marketris_${currentDifficulty + 1}.mp3`);
-const soundEffectLastLevel = new Audio(`assets/sound/last_level.mp3`);
+let music = new Audio(`assets/music/level_0.mp3`);
+let soundEffectLevel;
 const board = [];
 
 // ---- Current tetromino info ----
@@ -72,16 +73,19 @@ loadConfig().then(_ => {
 
   debug = config.debug;
   // Starting difficulty level (0 = easy, 1 = normal, etc.)
-  currentDifficulty = config.currentDifficulty;
-  requiredCompletedRowsToNextLevel = config.requiredCompletedRowsToNextLevel; // Number of completed rows to reach the next level
+  startingDifficulty = config.startingDifficulty;
   // Difficulty set the number of tetrominoes, hard level will have all tetrominoes
-  maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
+  // fromTetromino = difficultyLevels[startingDifficulty].fromTetromino;
+  // toTetromino = difficultyLevels[startingDifficulty].toTetromino;
+  if (difficultyLevels[startingDifficulty].sfx) {
+    soundEffectLevel = new Audio(`assets/sfx/level_${startingDifficulty}.mp3`);
+  }
 
 
   initializeBoard(board, boardRows, boardColumns);
 
   // Speed settings
-  speed = difficultyLevels[currentDifficulty].speed;
+  // speed = difficultyLevels[startingDifficulty].speed;
 });
 
 function initializeBoard(board, boardRows, boardColumns) {
@@ -102,7 +106,7 @@ function startGame() {
   startgame = false;
   score = 0;
   completedRowsToNextLevel = 0;
-  currentDifficulty = 0;
+  currentDifficulty = startingDifficulty;
   setDifficulty(currentDifficulty);
   createTetromino();
   draw();
@@ -115,19 +119,31 @@ function setDifficulty(level) {
   printDebug(`Setting difficulty level to ${difficultyLevels[currentDifficulty].name} (bonus x${currentDifficulty + 1})`);
   addLogMessage(`Level ${difficultyLevels[currentDifficulty].name}!`);
 
-  maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
+  fromTetromino = difficultyLevels[currentDifficulty].fromTetromino;
+  toTetromino = difficultyLevels[currentDifficulty].toTetromino;
   speed = difficultyLevels[currentDifficulty].speed;
 
-  // If it is not the last difficulty level, change the music
-  if (currentDifficulty < Object.keys(difficultyLevels).length - 1) {
-    music && music.pause()
-    music = new Audio(`assets/music/marketris_${currentDifficulty + 1}.mp3`);
+  if (difficultyLevels[currentDifficulty].music) {
+    music && music.pause(); // Stop the current music if it is playing
+    music = new Audio(`assets/music/level_${currentDifficulty}.mp3`);
     music.loop = true;
     music.play();
-  } else {
-    // The last level we only play the sound effect
-    soundEffectLastLevel.play();
   }
+
+  if (difficultyLevels[currentDifficulty].sfx) {
+    soundEffectLevel = new Audio(`assets/sfx/level_${currentDifficulty}.mp3`);
+    soundEffectLevel.play();
+  }
+
+  // Preload the next level music&sfx if expected
+  if (difficultyLevels[currentDifficulty + 1]?.music) {
+    new Audio(`assets/music/level_${currentDifficulty + 1}.mp3`);
+  }
+
+  if (difficultyLevels[currentDifficulty + 1]?.sfx) {
+    new Audio(`assets/sfx/level_${currentDifficulty + 1}.mp3`);
+  }
+
 
   clearInterval(timerId);
   // Timer for falling tetrominoes
@@ -152,8 +168,9 @@ function createTetromino() {
 
   currentRotation = 0;
 
-  currentShapeIndex = nextShapeIndex !== undefined ? nextShapeIndex : Math.floor(Math.random() * maxTetrominoes);
-  nextShapeIndex = Math.floor(Math.random() * maxTetrominoes);
+  currentShapeIndex = nextShapeIndex !== undefined ? nextShapeIndex : generateTetrominoIndex();
+  // Calculate the index randomly but from a range of tetrominoes
+  nextShapeIndex = generateTetrominoIndex();
 
   //printDebug(`Creating new tetromino ${currentShapeIndex} (next will be ${nextShapeIndex})`);
 
@@ -164,10 +181,17 @@ function createTetromino() {
   updateNextTetrominoDisplay()
 }
 
+// Generate a random tetromino index from a range
+function generateTetrominoIndex() {
+  return Math.floor(Math.random() * (toTetromino - fromTetromino + 1)) + fromTetromino
+}
+
+// Return the tetromino shape based on the index and rotation
 function generateTetromino(index, rotation = 0) {
   return tetrominoes[index][rotation];
 }
 
+// Update the next tetromino display on the HUD
 function updateNextTetrominoDisplay() {
   // Clear the next tetromino canvas
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
@@ -175,7 +199,6 @@ function updateNextTetrominoDisplay() {
   drawTetromino({ shapeIndex: nextShapeIndex, x: 1, y: 1, ctx: nextCtx, rotation: 0 });
 }
 
-// Rotate the tetromino
 function rotateTetromino() {
   if (gameover) {
     return;
@@ -196,7 +219,6 @@ function rotateTetromino() {
   currentTetromino = newTetromino;
 }
 
-// Move the tetromino down
 function moveTetrominoDown() {
   if (gameover) {
     return;
@@ -314,7 +336,7 @@ function checkForCompletedRows() {
       // Increment the number of completed rows
       completedRowsToNextLevel++;
 
-      if (completedRowsToNextLevel === requiredCompletedRowsToNextLevel) {
+      if (completedRowsToNextLevel >= difficultyLevels[currentDifficulty].linesToNextLevel) {
         // Increment the difficulty level
         if (currentDifficulty < Object.keys(difficultyLevels).length - 1) {
           setDifficulty(currentDifficulty + 1);
@@ -457,17 +479,17 @@ setTimeout(_ => {
 
 // addLogMessage(`Bonus 13452x`);
 
-canvas.addEventListener('touchstart', (e) => {
+tetrisCanvas.addEventListener('touchstart', (e) => {
   const touch = e.touches[0];
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
 });
 
-canvas.addEventListener('touchmove', (e) => {
+tetrisCanvas.addEventListener('touchmove', (e) => {
   e.preventDefault(); // Prevent scrolling
 });
 
-canvas.addEventListener('touchend', (e) => {
+tetrisCanvas.addEventListener('touchend', (e) => {
   const touch = e.changedTouches[0];
   const touchEndX = touch.clientX;
   const touchEndY = touch.clientY;
@@ -490,7 +512,7 @@ canvas.addEventListener('touchend', (e) => {
   }
 });
 
-canvas.addEventListener('touchstart', (e) => {
+tetrisCanvas.addEventListener('touchstart', (e) => {
   if (!gameStarted) {
     startGame();
   }
