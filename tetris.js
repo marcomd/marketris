@@ -31,7 +31,8 @@ let startingBoardRow;
 let boardRows;
 let speed;
 let timerId;
-let music = new Audio(`assets/sound/marketris_${currentDifficulty + 1}.mp3`);
+let music = new Audio(`assets/music/marketris_${currentDifficulty + 1}.mp3`);
+const soundEffectLastLevel = new Audio(`assets/sound/last_level.mp3`);
 const board = [];
 
 // ---- Current tetromino info ----
@@ -117,12 +118,15 @@ function setDifficulty(level) {
   maxTetrominoes = difficultyLevels[currentDifficulty].maxTetrominoes;
   speed = difficultyLevels[currentDifficulty].speed;
 
-  //const musicIndex = Math.floor(Math.random() * 3) + 1
-  if (currentDifficulty < 4) {
+  // If it is not the last difficulty level, change the music
+  if (currentDifficulty < Object.keys(difficultyLevels).length - 1) {
     music && music.pause()
-    music = new Audio(`assets/sound/marketris_${currentDifficulty + 1}.mp3`);
+    music = new Audio(`assets/music/marketris_${currentDifficulty + 1}.mp3`);
     music.loop = true;
     music.play();
+  } else {
+    // The last level we only play the sound effect
+    soundEffectLastLevel.play();
   }
 
   clearInterval(timerId);
